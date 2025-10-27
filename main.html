@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOG DE ARQUIVO CORPORATIVO</title>
+    <!-- Carregamento do Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração de fontes e tema dark --><script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-void': '#080808',
+                        'deep-black': '#000000',
+                        'matrix-green': '#00FF41',
+                        'neon-red': '#FF073A', // Cor para Suspeitos
+                        'neon-yellow': '#FFFF33', // NOVA COR: Vítima
+                        'cyber-blue': '#00FFFF',
+                        'dark-text': '#A0A0A0', // Cor para logs normais (cinza)
+                        'bright-white': '#F0F0F0',
+                    },
+                    fontFamily: {
+                        mono: ['"Space Mono"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    keyframes: {
+                        glitch: {
+                            '0%, 100%': { transform: 'translate(0)' },
+                            '20%': { transform: 'translate(-2px, 2px)' },
+                            '40%': { transform: 'translate(-2px, -2px)' },
+                            '60%': { transform: 'translate(2px, 2px)' },
+                            '80%': { transform: 'translate(2px, -2px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: 0, transform: 'translateY(10px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        lineAppear: {
+                            '0%': { width: '0%', opacity: 0 },
+                            '100%': { width: '100%', opacity: 1 },
+                        },
+                        flicker: { // Efeito de Glitch/Flicker Leve para Logs
+                            '0%': { textShadow: '1px 0 1px currentColor, -1px 0 1px currentColor' },
+                            '50%': { textShadow: 'none' },
+                            '100%': { textShadow: '1px 0 1px currentColor, -1px 0 1px currentColor' },
+                        },
+                    },
+                    animation: {
+                        glitch: 'glitch 0.1s infinite', 
+                        fadeIn: 'fadeIn 0.8s ease-out forwards',
+                        lineAppear: 'lineAppear 1.5s ease-out forwards',
+                        flicker: 'flicker 0.1s infinite alternate',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Fonts para o estilo --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* Fundo preto absoluto para o máximo de 'dark' */
+            background-color: #000000; 
+            color: #A0A0A0;
+            /* Permite rolagem vertical para ver todo o conteúdo */
+            overflow-y: auto; 
+            /* Garante que a rolagem horizontal indesejada seja evitada */
+            overflow-x: hidden; 
+            position: relative;
+        }
+        
+        /* Glitch base: classes aplicadas/removidas pelo JS */
+        .glitch-base {
+            position: relative;
+            color: #F0F0F0;
+        }
+        /* O Glitch será mantido em JS, mas controlado de forma estática */
+        .glitch-active::before,
+        .glitch-active::after {
+            content: attr(data-glitch);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            overflow: hidden;
+        }
+        .glitch-active::before {
+            left: 3px; 
+            text-shadow: -3px 0 #FF073A;
+            animation: glitch-anim-1 0.1s infinite linear alternate-reverse; 
+        }
+        .glitch-active::after {
+            left: -3px;
+            text-shadow: -3px 0 #00FFFF, 3px 3px #FF073A;
+            animation: glitch-anim-2 0.12s infinite linear alternate-reverse; 
+        }
+
+        /* Animações de glitch */
+        @keyframes glitch-anim-1 {
+            0% { clip: rect(25px, 9999px, 99px, 0) } 10% { clip: rect(100px, 9999px, 20px, 0) } 20% { clip: rect(60px, 9999px, 120px, 0) } 30% { clip: rect(10px, 9999px, 50px, 0) } 40% { clip: rect(150px, 9999px, 10px, 0) } 50% { clip: rect(30px, 9999px, 160px, 0) } 60% { clip: rect(90px, 9999px, 70px, 0) } 70% { clip: rect(120px, 9999px, 140px, 0) } 80% { clip: rect(5px, 9999px, 180px, 0) } 90% { clip: rect(170px, 9999px, 80px, 0) } 100% { clip: rect(20px, 9999px, 110px, 0) }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(120px, 9999px, 10px, 0) } 10% { clip: rect(5px, 9999px, 180px, 0) } 20% { clip: rect(170px, 9999px, 80px, 0) } 30% { clip: rect(20px, 9999px, 110px, 0) } 40% { clip: rect(25px, 9999px, 99px, 0) } 50% { clip: rect(100px, 9999px, 20px, 0) } 60% { clip: rect(60px, 9999px, 120px, 0) } 70% { clip: rect(10px, 9999px, 50px, 0) } 80% { clip: rect(150px, 9999px, 10px, 0) } 90% { clip: rect(30px, 9999px, 160px, 0) } 100% { clip: rect(90px, 9999px, 70px, 0) }
+        }
+
+        /* Fundo de partículas */
+        .particle {
+            position: absolute;
+            background-color: rgba(0, 255, 65, 0.4); 
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: particleFadeIn 2s ease-out forwards, particleMove 10s linear infinite;
+        }
+        @keyframes particleFadeIn {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 0.4; transform: scale(1); }
+        }
+        @keyframes particleMove {
+            0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.4; } 25% { transform: translateY(-20px) translateX(10px) scale(0.9); opacity: 0.3; } 50% { transform: translateY(0) translateX(0) scale(1); opacity: 0.4; } 75% { transform: translateY(20px) translateX(-10px) scale(1.1); opacity: 0.5; } 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.4; }
+        }
+
+        /* Efeito de Scanline */
+        .scanlines::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                rgba(0, 0, 0, 0.2) 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.5;
+        }
+        
+        /* Estilo para cada linha do log */
+        .log-entry {
+            padding: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+            /* Permite que a linha quebre, prevenindo o scroll horizontal em telas pequenas */
+            white-space: normal; 
+        }
+        .log-entry:hover {
+            background-color: rgba(0, 255, 65, 0.1);
+        }
+
+        /* Estilo para a caixa de status/nome dentro do log */
+        .neon-status {
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Classe para aplicar o flicker nos elementos de log */
+        .log-entry:hover .log-entry-text {
+            animation: flicker 0.1s infinite alternate;
+        }
+
+        /* O contêiner de log não tem altura máxima ou rolagem forçada */
+        #log-container {
+            overflow-y: visible; 
+            max-height: none; 
+        }
+    </style>
+</head>
+<body class="bg-deep-black text-dark-text font-mono p-4 md:p-8 relative scanlines">
+
+    <!-- Container para as partículas de fundo --><div id="particle-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- Image Pop-up Hover Box (Novo Elemento) -->
+    <div id="hover-image-popup" class="fixed hidden z-50 p-2 bg-dark-void border border-neon-red shadow-xl pointer-events-none rounded-lg transition-opacity duration-100 opacity-0 transform-gpu">
+        <div class="text-xs text-center text-neon-red mb-1 font-mono uppercase" id="popup-title"></div>
+        <!-- Imagem com tamanho fixo (w-40 h-52) para garantir uniformidade. -->
+        <img id="popup-image" src="" class="w-40 h-52 object-cover border border-gray-700" alt="Câmera de Segurança">
+        <div class="text-xs text-center text-matrix-green mt-1 font-mono">CAMERA FEED CAPTURE</div>
+    </div>
+
+    <!-- Conteúdo Principal --><div class="relative z-10">
+        
+        <!-- Título Principal (com Glitch Controlado) --><header class="text-center mb-6">
+            <h1 id="glitch-title" class="text-4xl md:text-6xl font-bold uppercase tracking-widest text-bright-white glitch-base glitch-active" data-glitch="ODOO - ACESSO CORPORATIVO">
+                ODOO - ACESSO CORPORATIVO
+            </h1>
+            <p class="text-xl md:text-3xl mt-2 font-light text-neon-red animate-fadeIn delay-300">
+                REGISTRO PONTO DE ACESSO <span class="text-cyber-blue font-medium">[23/OUT - 08:30:00 A 09:30:00]</span>
+            </p>
+            <div class="h-1 w-0 bg-neon-red mx-auto mt-6 animate-lineAppear"></div>
+        </header>
+
+        <!-- Seção de Logs (Agora exibindo todo o conteúdo) -->
+        <section class="max-w-6xl mx-auto mb-4 bg-dark-void p-6 rounded-xl shadow-2xl border border-matrix-green animate-fadeIn delay-1400">
+            <h3 class="text-2xl font-bold text-matrix-green mb-4 flex items-center border-b border-gray-800 pb-2">
+                <span class="mr-2">&gt;_</span> LOG_PONTO_TIQUE_TAQUE
+            </h3>
+            
+            <div class="relative space-y-1 py-1 text-sm md:text-base" id="log-container">
+                
+                <!-- NOVAS ENTRADAS DE LOG BASEADAS NO CSV -->
+                <!-- Funções auxiliares para horários e cores estão no script abaixo. -->
+
+                <!-- LOG: LUAH LOPES DUENAS (LLOP) - LIVRE (08:31:45) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+DUENAS%0AOK+24', event, 'LUAH LOPES DUENAS (LLOP)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:31:45</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">LUAH LOPES DUENAS (LLOP)</span>
+                </div>
+
+                <!-- LOG: BRUNO CROZETTA (BRCR) - LIVRE (08:32:01) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=B.+CROZETTA%0AOK+24', event, 'BRUNO CROZETTA (BRCR)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:32:01</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">BRUNO CROZETTA (BRCR)</span>
+                </div>
+                
+                <!-- LOG: EMILY ALVES DOS REIS (EMIA) - LIVRE (08:33:12) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=E.+DOS+REIS%0AOK+26', event, 'EMILY ALVES DOS REIS (EMIA)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:33:12</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 26</span> | <span class="neon-status text-dark-text log-entry-text">SABRINA PAINO PAIM (SPAI)</span>
+                </div>
+                
+                <!-- LOG: THIAGO DE SOUZA (THSO) - LIVRE (08:34:55) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=T.+DE+SOUZA%0AOK+25', event, 'THIAGO DE SOUZA (THSO)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:34:55</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">THIAGO DE SOUZA (THSO)</span>
+                </div>
+                
+                <!-- LOG: LUIZ GUILHERME BROBOWSKI PEREIRA (GULU) - LIVRE (08:35:30) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+PEREIRA%0AOK+24', event, 'LUIZ GUILHERME BROBOWSKI PEREIRA (GULU)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:35:30</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">LUIZ GUILHERME BROBOWSKI PEREIRA (GULU)</span>
+                </div>
+                
+                <!-- LOG: LARISSA APARECIDA BORINI (LAAP) - LIVRE (08:37:19) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+BORINI%0AOK+25', event, 'LARISSA APARECIDA BORINI (LAAP)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:37:19</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">LARISSA APARECIDA BORINI (LAAP)</span>
+                </div>
+
+                <!-- LOG: GABRIELLA MARINHO ALANO (GMAR) - SUSPEITO (08:39:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=G.+ALANO%0ASUSPECT', event, 'GABRIELLA MARINHO ALANO (GMAR) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">08:39:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-neon-red log-entry-text">GABRIELLA MARINHO ALANO (GMAR)</span>
+                </div>
+                
+                <!-- LOG: LUIZA OLIVEIRA (LUIZ) - LIVRE (08:41:22) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+OLIVEIRA%0AOK+25', event, 'LUIZA OLIVEIRA (LUIZ)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:41:22</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">LUIZA OLIVEIRA (LUIZ)</span>
+                </div>
+
+                <!-- LOG: VITOR EMANUEL P. MACHADO (VEMA) - LIVRE (08:43:08) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=V.+MACHADO%0AOK+24', event, 'VITOR EMANUEL P. MACHADO (VEMA)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:43:08</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">VITOR EMANUEL P. MACHADO (VEMA)</span>
+                </div>
+                
+                <!-- LOG: ANDRE LUIZ TEIXEIRA CARDOSO (ALTC) - LIVRE (08:44:40) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=A.+CARDOSO%0AOK+24', event, 'ANDRE LUIZ TEIXEIRA CARDOSO (ALTC)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:44:40</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">ANDRE LUIZ TEIXEIRA CARDOSO (ALTC)</span>
+                </div>
+                
+                <!-- LOG: BRUNO MACEDO BRITO (BMAC) - LIVRE (08:45:15) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=B.+BRITO%0AOK+24', event, 'BRUNO MACEDO BRITO (BMAC)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:45:15</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">BRUNO MACEDO BRITO (BMAC)</span>
+                </div>
+                
+                <!-- LOG: FELIPE CHAGAS TELES (FECH) - LIVRE (08:46:58) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=F.+TELES%0AOK+25', event, 'FELIPE CHAGAS TELES (FECH)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:46:58</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">FELIPE CHAGAS TELES (FECH)</span>
+                </div>
+                
+                <!-- LOG: GUILHERME EIDAM GAYA ZANIN (GUZA) - LIVRE (08:47:33) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=G.+ZANIN%0AOK+24', event, 'GUILHERME EIDAM GAYA ZANIN (GUZA)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:47:33</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">GUILHERME EIDAM GAYA ZANIN (GUZA)</span>
+                </div>
+
+                <!-- LOG: NATHALIA AZEREDO DOS SANTOS (NATO) - SUSPEITO (08:48:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=N.+SANTOS%0ASUSPECT', event, 'NATHALIA AZEREDO DOS SANTOS (NATO) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">08:48:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-red log-entry-text">NATHALIA AZEREDO DOS SANTOS (NATO)</span>
+                </div>
+
+                <!-- LOG: NICOLAU BOGDANO BAJALUK JUNIOR (NBBJ) - LIVRE (08:50:41) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=N.+BAJALUK%0AOK+25', event, 'NICOLAU BOGDANO BAJALUK JUNIOR (NBBJ)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:50:41</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">NICOLAU BOGDANO BAJALUK JUNIOR (NBBJ)</span>
+                </div>
+                
+                <!-- LOG: LUIS FERNANDO SOUZA CORREA (LUSA) - LIVRE (08:51:30) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+CORREA%0AOK+24', event, 'LUIS FERNANDO SOUZA CORREA (LUSA)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:51:30</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">LUIS FERNANDO SOUZA CORREA (LUSA)</span>
+                </div>
+                
+                <!-- LOG: MATEUS HENRIQUE SANTANNA PATRICIO (MHSP) - LIVRE (08:52:17) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=M.+PATRICIO%0AOK+24', event, 'MATEUS HENRIQUE SANTANNA PATRICIO (MHSP)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:52:17</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">MATEUS HENRIQUE SANTANNA PATRICIO (MHSP)</span>
+                </div>
+                
+                <!-- LOG: GUILHERME CAVASSANA PEREIRA (GUPE) - LIVRE (08:54:59) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=G.+PEREIRA%0AOK+24', event, 'GUILHERME CAVASSANA PEREIRA (GUPE)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:54:59</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">GUILHERME CAVASSANA PEREIRA (GUPE)</span>
+                </div>
+
+                <!-- LOG: MATEUS ZANONI DIAS (MAZA) - LIVRE (08:55:34) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=M.+DIAS%0AOK+24', event, 'MATEUS ZANONI DIAS (MAZA)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:55:34</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">MATEUS ZANONI DIAS (MAZA)</span>
+                </div>
+                
+                <!-- LOG: LUCAS BARROS (LUB) - LIVRE (08:57:16) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+BARROS%0AOK+25', event, 'LUCAS BARROS (LUB)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:57:16</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">LUCAS ERNESTO MAYER (LUEM)</span>
+                </div>
+                
+                <!-- LOG: GIULIA PAULA RICHTER (GIRI) - LIVRE (08:58:01) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=G.+RICHTER%0AOK+25', event, 'GIULIA PAULA RICHTER (GIRI)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">08:58:01</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">GIULIA PAULA RICHTER (GIRI)</span>
+                </div>
+
+                <!-- LOG: RAPHAEL MARCHIORE NATEL (RAMN) - SUSPEITO (09:00:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=R.+NATEL%0ASUSPECT', event, 'RAPHAEL MARCHIORE NATEL (RAMN) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">09:00:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-red log-entry-text">RAPHAEL MARCHIORE NATEL (RAMN)</span>
+                </div>
+                
+                <!-- LOG: MARIA LUIZA BATALHA (MLUI) - VITIMA (09:02:43) -->
+                <div class="log-entry bg-opacity-10 text-neon-yellow" 
+                     onmousemove="showImage('https://placehold.co/150x208/9A9A00/000000?text=M.+BATALHA%0AVITIMA', event, 'MARIA LUIZA BATALHA (MLUI) - VÍTIMA')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-yellow log-entry-text">09:02:43</span> | <span class="neon-status text-neon-yellow log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-yellow log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-yellow log-entry-text">MARIA LUIZA BATALHA (MLUI)</span>
+                </div>
+                
+                <!-- LOG: THALES EDUARDO GENTIL (THGE) - LIVRE (09:05:25) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=T.+GENTIL%0AOK+25', event, 'THALES EDUARDO GENTIL (THGE)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:05:25</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">THALES EDUARDO GENTIL (THGE)</span>
+                </div>
+                
+                <!-- LOG: DAVID SELLA KHOURI (DASE) - LIVRE (09:07:08) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=D.+KHOURI%0AOK+25', event, 'DAVID SELLA KHOURI (DASE)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:07:08</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">DAVID SELLA KHOURI (DASE)</span>
+                </div>
+                
+                <!-- LOG: MARIANA ESCOBAR JESSER (JESM) - SUSPEITO (09:09:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=M.+JESSER%0ASUSPECT', event, 'MARIANA ESCOBAR JESSER (JESM) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">09:09:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-red log-entry-text">MARIANA ESCOBAR JESSER (JESM)</span>
+                </div>
+                
+                <!-- LOG: GABRIEL PIMENTEL LAGO (GAPI) - LIVRE (09:10:42) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=G.+LAGO%0AOK+24', event, 'GABRIEL PIMENTEL LAGO (GAPI)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:10:42</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">GABRIEL PIMENTEL LAGO (GAPI)</span>
+                </div>
+                
+                <!-- LOG: LEONARDO PEGORARO (LEPE) - LIVRE (09:12:25) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+PEGORARO%0AOK+24', event, 'LEONARDO PEGORARO (LEPE)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:12:25</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">LEONARDO PEGORARO (LEPE)</span>
+                </div>
+
+                <!-- LOG: ELI SCHURKIM FERNANDEZ (ELFE) - SUSPEITO (09:15:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=E.+FERNANDEZ%0ASUSPECT', event, 'ELI SCHURKIM FERNANDEZ (ELFE) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">09:15:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-red log-entry-text">ELI SCHURKIM FERNANDEZ (ELFE)</span>
+                </div>
+                
+                <!-- LOG: ANA WERNER DE ARRUDA GONCALVES (WEAN) - LIVRE (09:17:41) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=A.+GONCALVES%0AOK+25', event, 'ANA WERNER DE ARRUDA GONCALVES (WEAN)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:17:41</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 25</span> | <span class="neon-status text-dark-text log-entry-text">ANA WERNER DE ARRUDA GONCALVES (WEAN)</span>
+                </div>
+                
+                <!-- LOG: LUAAN SOUZA DE ALMEIDA (LUSO) - LIVRE (09:19:24) -->
+                <div class="log-entry" 
+                     onmousemove="showImage('https://placehold.co/150x208/333333/A0A0A0?text=L.+ALMEIDA%0AOK+24', event, 'LUAN SOUZA DE ALMEIDA (LUSO)')" 
+                     onmouseout="hideImage()">
+                    <span class="text-dark-text log-entry-text">09:19:24</span> | <span class="neon-status text-dark-text log-entry-text">ACCESS_GRANTED</span> | <span class="text-dark-text log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-dark-text log-entry-text">LUAN SOUZA DE ALMEIDA (LUSO)</span>
+                </div>
+                
+                <!-- LOG: JULIA RUIZ RETAMAL (JURE) - SUSPEITO (09:30:00) -->
+                <div class="log-entry bg-opacity-10 bg-neon-red" 
+                     onmousemove="showImage('https://placehold.co/150x208/8B0000/FFFFFF?text=J.+RETAMAL%0ASUSPECT', event, 'JULIA RUIZ RETAMAL (JURE) - SUSPEITO')" 
+                     onmouseout="hideImage()">
+                    <span class="text-neon-red log-entry-text">09:30:00</span> | <span class="neon-status text-neon-red log-entry-text">ACCESS_GRANTED</span> | <span class="text-neon-red log-entry-text">P. PRINCIPAL ANDAR 24</span> | <span class="neon-status text-neon-red log-entry-text">JULIA RUIZ RETAMAL (JURE)</span>
+                </div>
+
+
+                <!-- ALERTA FINAL -->
+                <div class="log-entry bg-opacity-20 bg-neon-red mt-4">
+                    <span class="text-neon-red log-entry-text">09:30:00</span> | <span class="neon-status text-neon-red log-entry-text">TERMINAL_STOP</span> | <span class="text-neon-red log-entry-text">DUMP DE DADOS FINALIZADO</span> | <span class="neon-status text-neon-red log-entry-text">INTEGRIDADE VERIFICADA: OK</span>
+                </div>
+                
+            </div>
+        </section>
+
+        <!-- Rodapé/Disclaimer de Acompanhamento --><footer class="text-center py-4 border-t border-gray-800 mt-2 max-w-6xl mx-auto animate-fadeIn delay-1500">
+            <p class="text-sm text-dark-text">
+                TERMINAL DE ARQUIVO V 3.0 (DADOS RECUPERADOS)
+            </p>
+            <p class="text-xs mt-1 text-gray-700">
+                A verdade é um código. Decifre-o.
+            </p>
+        </footer>
+    </div> 
+
+    <!-- Script para funções de alerta, partículas e hover da imagem --><script>
+        // Elementos do Pop-up
+        const popup = document.getElementById('hover-image-popup');
+        const popupImage = document.getElementById('popup-image');
+        const popupTitle = document.getElementById('popup-title');
+
+        /**
+         * Exibe o pop-up da imagem na posição do mouse.
+         * @param {string} imageUrl URL da imagem placeholder.
+         * @param {Event} event Evento do mouse (para obter coordenadas).
+         * @param {string} title Título a ser exibido no pop-up.
+         */
+        function showImage(imageUrl, event, title) {
+            // Define a fonte e o título
+            popupImage.src = imageUrl;
+            popupTitle.textContent = title;
+
+            // Define a posição (ajustando para evitar que o pop-up saia da tela)
+            const popupWidth = 170; // Largura do pop-up + padding
+            const popupHeight = 250; // Altura do pop-up + padding (w-40 h-52)
+            
+            let x = event.clientX + 15; // 15px à direita do cursor
+            let y = event.clientY - 10; // 10px acima do cursor
+
+            // Ajuste horizontal se estiver muito à direita
+            if (x + popupWidth > window.innerWidth) {
+                x = event.clientX - popupWidth - 15;
+            }
+
+            // Ajuste vertical se estiver muito para baixo
+            if (y + popupHeight > window.innerHeight) {
+                y = window.innerHeight - popupHeight;
+            }
+            // Ajuste vertical se estiver muito para cima
+            if (y < 0) {
+                y = 0;
+            }
+
+
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+            
+            // Exibe e anima
+            if (popup.classList.contains('hidden')) {
+                popup.classList.remove('hidden');
+                setTimeout(() => {
+                    popup.style.opacity = '1';
+                }, 10);
+            }
+        }
+
+        /**
+         * Oculta o pop-up da imagem.
+         */
+        function hideImage() {
+            popup.style.opacity = '0';
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 100);
+        }
+
+        // Função para simular um "alerta" dark em uma modal personalizada
+        function showCustomAlert(message) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-deep-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
+            modal.innerHTML = `
+                <div class="bg-dark-void p-8 rounded-lg shadow-2xl max-w-md w-full border-2 border-neon-red transform scale-90 transition-transform duration-300">
+                    <h4 class="text-2xl font-bold text-neon-red mb-4 uppercase tracking-wider font-mono">WARNING: SYSTEM_ALERT</h4>
+                    <p class="text-cyber-blue mb-6 font-mono text-lg">${message}</p>
+                    <button id="closeAlert" class="w-full bg-neon-red hover:bg-red-800 text-white font-bold py-3 rounded-md transition duration-200 uppercase font-mono tracking-wider">
+                        DISMISS_ALERT
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Animação de entrada
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-90');
+            }, 10);
+
+            document.getElementById('closeAlert').onclick = function() {
+                // Animação de saída
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.add('scale-90');
+                setTimeout(() => modal.remove(), 300);
+            };
+        }
+
+        // Simula partículas de fundo
+        const particleContainer = document.getElementById('particle-container');
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            const size = Math.random() * 3 + 1; // Tamanho entre 1px e 4px
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animationDelay = `${Math.random() * -10}s`; 
+            particleContainer.appendChild(particle);
+
+            // Remove a partícula após um tempo para evitar sobrecarga
+            setTimeout(() => {
+                particle.remove();
+            }, 20000); 
+        }
+
+        // Gera um fluxo contínuo de partículas
+        setInterval(createParticle, 500); 
+
+        
+        /* ----------------------------------------------------- */
+        /* --------- FUNÇÃO DE GLITCH ESTÁTICA MANTIDA --------- */
+        /* ----------------------------------------------------- */
+
+        /**
+         * Aplica e remove a classe de glitch no título em intervalos aleatórios.
+         */
+        function controlGlitch() {
+            const title = document.getElementById('glitch-title');
+            const isGlitching = title.classList.contains('glitch-active');
+
+            // Garante que o glitch do título esteja sempre ativo para a estética estática.
+            if (!isGlitching) {
+                 title.classList.add('glitch-active');
+            }
+            
+            // Reaplicamos o loop de glitch para manter o efeito dinâmico na tela estática.
+            const nextGlitchDelay = Math.random() * 7000 + 3000; // 3s a 10s
+            setTimeout(controlGlitch, nextGlitchDelay);
+        }
+
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Garante que o glitch do título esteja ativo
+            controlGlitch(); 
+        });
+    </script>
+</body>
+</html>
